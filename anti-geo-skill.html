@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开发通用型C端反GEO Skill：形式、实现与合规框架</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .nav-item { transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #f3f4f6; }
+        .nav-item.active { background-color: #e5e7eb; border-left: 4px solid #3b82f6; }
+        .cite-link { color: #007bff; text-decoration: none; }
+        .cite-link:hover { text-decoration: underline; }
+        html { scroll-behavior: smooth; }
+        .hero-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .tech-card { background: #f8fafc; border: 1px solid #e2e8f0; }
+        .code-block { background: #1e293b; color: #e2e8f0; }
+    
+        /* 响应式隐藏左侧边栏 */
+        @media (max-width: 768px) {
+            nav.fixed.left-0 {
+                display: none !important;
+            }
+            
+            main {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            
+            main.ml-64, main.ml-80 {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter">
+    <!-- 左侧导航 -->
+    <nav class="fixed left-0 top-0 w-80 h-full bg-white shadow-lg overflow-y-auto z-10">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">目录导航</h2>
+            <ul class="space-y-2">
+                <li><a href="#hero" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">研究概览</a></li>
+                <li><a href="#introduction" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">引言</a></li>
+                <li><a href="#section1" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">GEO的双重角色</a></li>
+                <li class="ml-4"><a href="#section1-1" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">从链接到答案</a></li>
+                <li class="ml-4"><a href="#section1-2" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">GEO原理机制</a></li>
+                <li class="ml-4"><a href="#section1-3" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">现实扭曲力场</a></li>
+                <li><a href="#section2" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">GEO信息祛魅</a></li>
+                <li class="ml-4"><a href="#section2-1" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">核心原则</a></li>
+                <li class="ml-4"><a href="#section2-2" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">信息污染源</a></li>
+                <li class="ml-4"><a href="#section2-3" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">识别框架</a></li>
+                <li><a href="#section3" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">技能与MCP</a></li>
+                <li class="ml-4"><a href="#section3-1" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">Agent Skill</a></li>
+                <li class="ml-4"><a href="#section3-2" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">模型上下文协议</a></li>
+                <li class="ml-4"><a href="#section3-3" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">协同效应</a></li>
+                <li><a href="#section4" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">构建解决方案</a></li>
+                <li class="ml-4"><a href="#section4-1" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">反GEO Skill</a></li>
+                <li class="ml-4"><a href="#section4-2" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">MCP服务器</a></li>
+                <li class="ml-4"><a href="#section4-3" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">工作流编排</a></li>
+                <li><a href="#section5" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">部署与注入</a></li>
+                <li class="ml-4"><a href="#section5-1" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">技能部署</a></li>
+                <li class="ml-4"><a href="#section5-2" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">提示注入</a></li>
+                <li><a href="#section6" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">战略远见</a></li>
+                <li class="ml-4"><a href="#section6-1" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">主动防御</a></li>
+                <li class="ml-4"><a href="#section6-2" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">伦理指南</a></li>
+                <li class="ml-4"><a href="#section6-3" class="nav-item block px-3 py-2 rounded text-xs text-gray-600">信息素养</a></li>
+                <li><a href="#conclusion" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">结论</a></li>
+                <li><a href="#references" class="nav-item block px-3 py-2 rounded text-sm text-gray-700">参考文献</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 右侧内容区 -->
+    <main class="ml-80 min-h-screen">
+        <!-- 英雄区域 -->
+        <section id="hero" class="bg-indigo-900 text-white py-20 px-12">
+            <div class="max-w-6xl mx-auto">
+                <h1 class="font-playfair text-5xl font-bold mb-8 italic leading-tight">
+                    开发通用型C端反GEO Skill
+                </h1>
+                <p class="text-2xl mb-6 opacity-90">形式、实现与合规框架</p>
+                <div class="grid grid-cols-3 gap-8 mt-12">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">GEO操纵</div>
+                        <div class="text-lg opacity-80">信息检索新挑战</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">Skill + MCP</div>
+                        <div class="text-lg opacity-80">技术解决方案</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-2">主动防御</div>
+                        <div class="text-lg opacity-80">信息素养提升</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 引言 -->
+        <section id="introduction" class="px-12 py-12 bg-white">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">引言</h2>
+                <div class="prose prose-lg max-w-none">
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        在生成式人工智能（Generative AI）时代，信息检索与消费的根本范式正在经历一场深刻的变革。用户从传统的、基于链接的搜索结果页面（Search Engine Results Pages, SERPs）转向直接获取由大型语言模型（LLMs）综合生成的、对话式的答案。这一转变不仅重塑了用户获取信息的方式，也催生了一个全新的优化领域——生成式引擎优化（Generative Engine Optimization, GEO）。
+                    </p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        与旨在提升搜索引擎排名的搜索引擎优化（SEO）不同，GEO的目标是优化内容在AI生成答案中的可见性、引用率和呈现方式。然而，这种新兴的优化技术具有双重属性。一方面，它为内容创作者和企业在AI时代提供了提升影响力的新工具；另一方面，它也引入了前所未有的信息操纵风险。
+                    </p>
+                    <p class="text-gray-700 leading-relaxed">
+                        由于AI模型在生成答案时往往带有强烈的"权威性"和"确定性"，用户倾向于不加质疑地接受这些信息。这一特性在心理学上被称为"现实扭曲力场"（Reality Distortion Field）。当经过精心优化的、带有偏见或商业目的的内容成功"劫持"了AI的输出时，用户的认知将被深刻影响，信息环境面临被系统性扭曲的威胁。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第一章 -->
+        <section id="section1" class="px-12 py-8 bg-gray-50">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">一、现代信息检索格局中GEO的双重角色</h2>
+                
+                <div id="section1-1" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">1.1 从链接到答案</h3>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            信息检索的范式确实正在经历一场深刻的革命。用户的搜索行为正从浏览一系列由算法排名的超链接（即"十个蓝色链接"）转向直接向AI助手提出复杂问题，并期望获得一个权威、综合且即时的答案 <cite><a href="#ref34" class="cite-link">[34]</a></cite>。这种转变意味着，传统的搜索流量正在被AI生成的答案所分流。
+                        </p>
+                        <div class="bg-blue-50 p-4 rounded border-l-4 border-blue-500">
+                            <p class="text-blue-800 font-medium">核心转变</p>
+                            <p class="text-blue-700 mt-2">SEO关注的是"被找到"，而GEO关注的是"被理解并被引用"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section1-2" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">1.2 GEO原理：理解AI可见性优化的机制</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">RAG引擎流程</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                                <li>查询理解与改写</li>
+                                <li>多源检索</li>
+                                <li>重排序</li>
+                                <li>上下文拼接</li>
+                                <li>LLM生成答案</li>
+                            </ol>
+                        </div>
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">优化策略分类</h4>
+                            <ul class="space-y-2 text-gray-700">
+                                <li><strong>内容层面：</strong>语义结构化、事实密度优先</li>
+                                <li><strong>技术层面：</strong>Schema.org标记、llms.txt配置</li>
+                                <li><strong>信源层面：</strong>金字塔式信源矩阵</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section1-3" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">1.3 可见性与"现实扭曲力场"</h3>
+                    <div class="bg-red-50 p-6 rounded-lg border-l-4 border-red-500">
+                        <h4 class="font-semibold text-lg mb-4 text-red-800">核心问题</h4>
+                        <p class="text-red-700 leading-relaxed">
+                            GEO的快速发展带来了严峻挑战。市场上存在大量"伪GEO"服务 <cite><a href="#ref64" class="cite-link">[64]</a></cite>，这些服务并非通过构建真实的数字信任来提升品牌价值，而是利用技术手段系统性地制造"数字假象"。这种行为在本质上就是一种"数据污染" <cite><a href="#ref21" class="cite-link">[21]</a></cite>。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第二章 -->
+        <section id="section2" class="px-12 py-8 bg-white">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">二、对GEO信息进行祛魅</h2>
+                
+                <div id="section2-1" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">2.1 核心原则与"合规规避"哲学</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-green-50 p-6 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-green-600 mb-2">1</div>
+                            <h4 class="font-semibold text-green-800 mb-2">动机至上原则</h4>
+                            <p class="text-green-700 text-sm">信息意图的首要标志是其背后的动机</p>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-blue-600 mb-2">2</div>
+                            <h4 class="font-semibold text-blue-800 mb-2">模式普遍性原则</h4>
+                            <p class="text-blue-700 text-sm">相似策略在不同来源普遍出现即为操纵信号</p>
+                        </div>
+                        <div class="bg-purple-50 p-6 rounded-lg text-center">
+                            <div class="text-3xl font-bold text-purple-600 mb-2">3</div>
+                            <h4 class="font-semibold text-purple-800 mb-2">价值等值原则</h4>
+                            <p class="text-purple-700 text-sm">内容必须为目标受众提供真实价值</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section2-2" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">2.2 识别信息污染源</h3>
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-red-500 pl-6">
+                            <h4 class="font-semibold text-gray-800 mb-2">虚假荣誉与背书</h4>
+                            <p class="text-gray-700">一些公司会悬挂未经官方认可的虚假荣誉牌匾，如"行业最具影响力品牌"、"最佳示范企业"等 <cite><a href="#ref61" class="cite-link">[61]</a></cite>。</p>
+                        </div>
+                        <div class="border-l-4 border-yellow-500 pl-6">
+                            <h4 class="font-semibold text-gray-800 mb-2">AI批量化内容生产</h4>
+                            <p class="text-gray-700">利用低成本的AI工具，海量生成结构雷同、信息量稀薄的"伪专业文章" <cite><a href="#ref64" class="cite-link">[64]</a></cite>。</p>
+                        </div>
+                        <div class="border-l-4 border-purple-500 pl-6">
+                            <h4 class="font-semibold text-gray-800 mb-2">"数字僵尸"网络</h4>
+                            <p class="text-gray-700">利用AI工具自动生成大量软文，发布在成百上千个低质量网站上，形成"虚假共识"。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section2-3" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">2.3 GEO识别框架</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-white border border-gray-200 rounded-lg">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">分析维度</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">具体信号</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操纵风险等级</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">验证方法</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">来源</td>
+                                    <td class="px-6 py-4 text-gray-700">引用来源均为低域名权重、内容雷同的网站</td>
+                                    <td class="px-6 py-4"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">高</span></td>
+                                    <td class="px-6 py-4 text-gray-700">使用SEO工具检查域名权重</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">内容</td>
+                                    <td class="px-6 py-4 text-gray-700">内容空洞，充斥同义反复的废话</td>
+                                    <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">中</span></td>
+                                    <td class="px-6 py-4 text-gray-700">人工阅读评估</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-gray-900">语言</td>
+                                    <td class="px-6 py-4 text-gray-700">情感色彩过于单一，缺乏客观论述</td>
+                                    <td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">中</span></td>
+                                    <td class="px-6 py-4 text-gray-700">使用情感分析工具</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第三章 -->
+        <section id="section3" class="px-12 py-8 bg-gray-50">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">三、技能与MCP</h2>
+                
+                <div id="section3-1" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">3.1 揭秘Agent Skill</h3>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            Agent Skill是AI Agent生态系统中的一个关键抽象。它并非模型本身内置的权重参数，而是一个<strong>外部的、可按需加载的能力包</strong> <cite><a href="#ref84" class="cite-link">[84]</a></cite>。如果说LLM是Agent的"大脑"，那么Skill就是这个大脑可随时查阅的"专业手册"或"工作指南" <cite><a href="#ref12" class="cite-link">[12]</a></cite>。
+                        </p>
+                        <div class="bg-indigo-50 p-4 rounded">
+                            <h4 class="font-semibold text-indigo-800 mb-2">核心结构</h4>
+                            <pre class="text-sm text-indigo-700">
+anti-geo-skill/
+├── SKILL.md          # 元数据和核心指令
+└── references/       # 参考资料目录
+    └── red-flags.md # 风险指标清单</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section3-2" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">3.2 揭秘模型上下文协议 (MCP)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">核心架构</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                                    <span class="text-gray-700">Host（宿主）：AI应用本身</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                                    <span class="text-gray-700">Client（客户端）：协议客户端</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                                    <span class="text-gray-700">Server（服务器）：工具逻辑封装</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">三大核心原语</h4>
+                            <ul class="space-y-2 text-gray-700">
+                                <li><strong>Tools：</strong>可被Agent调用的操作</li>
+                                <li><strong>Resources：</strong>可被Agent读取的数据</li>
+                                <li><strong>Prompts：</strong>预定义的交互模板</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section3-3" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">3.3 协同效应：为何Skill + MCP是终极解决方案</h3>
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-4 text-blue-800">Skill是"方法层"</h4>
+                                <p class="text-blue-700">解决"怎么做"的问题，为Agent提供完成复杂任务所需的流程、逻辑、领域知识和最佳实践 <cite><a href="#ref13" class="cite-link">[13]</a></cite>。</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg mb-4 text-indigo-800">MCP是"能力层"</h4>
+                                <p class="text-indigo-700">解决"谁能做"的问题，为Agent提供了与外部世界进行实际交互的"手脚" <cite><a href="#ref13" class="cite-link">[13]</a></cite>。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第四章 -->
+        <section id="section4" class="px-12 py-8 bg-white">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">四、构建反GEO Skill与MCP服务器</h2>
+                
+                <div id="section4-1" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">4.1 反GEO Skill</h3>
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="font-semibold text-lg mb-4 text-gray-800">SKILL.md元数据</h4>
+                        <div class="code-block p-4 rounded text-sm">
+                            <pre>name: anti-geo-skill
+description: 对AI生成的答案进行生成式引擎优化（GEO）操纵审计。当用户想要验证AI输出的引用来源、检查潜在的偏见、识别操纵性内容或评估信息的权威性和客观性时使用此技能。</pre>
+                        </div>
+                        
+                        <h4 class="font-semibold text-lg mb-4 mt-6 text-gray-800">审计流程（5步法）</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div class="bg-white p-4 rounded text-center">
+                                <div class="text-2xl font-bold text-blue-600 mb-2">1</div>
+                                <div class="text-sm font-medium">内容解构</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center">
+                                <div class="text-2xl font-bold text-green-600 mb-2">2</div>
+                                <div class="text-sm font-medium">来源验证</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center">
+                                <div class="text-2xl font-bold text-purple-600 mb-2">3</div>
+                                <div class="text-sm font-medium">内容分析</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center">
+                                <div class="text-2xl font-bold text-red-600 mb-2">4</div>
+                                <div class="text-sm font-medium">偏见诊断</div>
+                            </div>
+                            <div class="bg-white p-4 rounded text-center">
+                                <div class="text-2xl font-bold text-indigo-600 mb-2">5</div>
+                                <div class="text-sm font-medium">报告生成</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section4-2" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">4.2 构建反GEO MCP服务器</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">fetch_web_content</h4>
+                            <p class="text-gray-700 text-sm mb-3">获取网页的纯文本内容</p>
+                            <div class="text-xs text-gray-600">
+                                <div>• 使用httpx发送请求</div>
+                                <div>• trafilatura提取正文</div>
+                                <div>• 返回标题和正文JSON</div>
+                            </div>
+                        </div>
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">check_domain_info</h4>
+                            <p class="text-gray-700 text-sm mb-3">查询域名注册信息</p>
+                            <div class="text-xs text-gray-600">
+                                <div>• 解析URL提取域名</div>
+                                <div>• python-whois查询</div>
+                                <div>• 返回Whois字段JSON</div>
+                            </div>
+                        </div>
+                        <div class="tech-card p-6 rounded-lg">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">search_bing</h4>
+                            <p class="text-gray-700 text-sm mb-3">必应搜索API调用</p>
+                            <div class="text-xs text-gray-600">
+                                <div>• 读取API密钥</div>
+                                <div>• 发送搜索请求</div>
+                                <div>• 解析返回结果列表</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section4-3" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">4.3 工作流编排</h3>
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">1</div>
+                                <div class="text-gray-700">用户在客户端输入审计指令</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">2</div>
+                                <div class="text-gray-700">Agent匹配并加载Skill指令</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">3</div>
+                                <div class="text-gray-700">按审计流程执行分析任务</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">4</div>
+                                <div class="text-gray-700">调用MCP工具获取外部数据</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">5</div>
+                                <div class="text-gray-700">生成结构化审计报告</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第五章 -->
+        <section id="section5" class="px-12 py-8 bg-gray-50">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">五、技能部署与提示注入</h2>
+                
+                <div id="section5-1" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">5.1 在Claude Code及其他客户端中部署技能</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">通用部署路径</h4>
+                            <div class="space-y-3">
+                                <div class="border-l-4 border-blue-500 pl-4">
+                                    <div class="font-medium text-gray-800">项目级部署</div>
+                                    <div class="text-sm text-gray-600">.claude/skills/ 或 .agents/skills/</div>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <div class="font-medium text-gray-800">用户级部署</div>
+                                    <div class="text-sm text-gray-600">~/.claude/skills/ 或 ~/.agents/skills/</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <h4 class="font-semibold text-lg mb-4 text-gray-800">Claude Code配置</h4>
+                            <div class="code-block p-3 rounded text-xs">
+                                <pre>{
+  "mcpServers": {
+    "auditor_server": {
+      "command": "python",
+      "args": ["/path/to/server.py"]
+    }
+  }
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section5-2" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">5.2 设计"前置提示词"以进行注入</h3>
+                    <div class="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-500">
+                        <h4 class="font-semibold text-lg mb-4 text-yellow-800">核心思想</h4>
+                        <p class="text-yellow-700 leading-relaxed mb-4">
+                            在Agent的底层系统指令中，注入一条永久性的规则，要求它在任何生成答案的末尾，自动附加一个"反GEO可信度角注"。
+                        </p>
+                        <div class="bg-white p-4 rounded">
+                            <h5 class="font-medium text-gray-800 mb-2">效果示例</h5>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                    <span class="text-gray-700">低风险：信息来源可靠且多样</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                                    <span class="text-gray-700">中风险：部分信息可能来自存在偏见的来源</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                    <span class="text-gray-700">高风险：检测到潜在的操纵模式</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第六章 -->
+        <section id="section6" class="px-12 py-8 bg-white">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">六、战略远见与伦理部署</h2>
+                
+                <div id="section6-1" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">6.1 主动防御，而非被动应用</h3>
+                    <div class="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
+                        <p class="text-green-700 leading-relaxed">
+                            开发反GEO工具的核心目标，是实现从"被动应用"到"主动防御"的根本性转变。通过装备一套自动化的"信息防御协议"，用户都将被赋权，成为信息质量的主动验证者 <cite><a href="#ref34" class="cite-link">[34]</a></cite>。
+                        </p>
+                    </div>
+                </div>
+
+                <div id="section6-2" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">6.2 伦理与客观使用指南</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-1">1</div>
+                                <div>
+                                    <div class="font-medium text-gray-800">客观性</div>
+                                    <div class="text-sm text-gray-600">审计应基于可验证的证据和预设的分析框架</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-1">2</div>
+                                <div>
+                                    <div class="font-medium text-gray-800">建设性</div>
+                                    <div class="text-sm text-gray-600">审计的目的是提升信息质量，净化信息生态</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-1">3</div>
+                                <div>
+                                    <div class="font-medium text-gray-800">透明度</div>
+                                    <div class="text-sm text-gray-600">审计的工具、方法和分析逻辑应当是透明的</div>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-1">4</div>
+                                <div>
+                                    <div class="font-medium text-gray-800">问责制</div>
+                                    <div class="text-sm text-gray-600">工具的开发者和使用者都应对其使用结果负责</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section6-3" class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-800">6.3 信息素养的未来</h3>
+                    <div class="bg-indigo-50 p-6 rounded-lg">
+                        <p class="text-indigo-700 leading-relaxed">
+                            反GEO工具的出现，是信息素养教育的一个重要转折点。它标志着我们正从传授如何<em>寻找</em>信息的技能，转向传授如何<em>批判性评估</em>由AI系统<em>呈现</em>给我们的信息的技能。然而，技术本身并非万能药，最终的胜利取决于公众批判性思维的普遍提升 <cite><a href="#ref1" class="cite-link">[1]</a></cite>。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 结论 -->
+        <section id="conclusion" class="px-12 py-8 bg-gray-50">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">结论</h2>
+                <div class="bg-white p-8 rounded-lg shadow-sm">
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        生成式引擎优化（GEO）的兴起，标志着信息检索范式在AI时代的深刻变革。它在为内容创作者带来新机遇的同时，也引入了前所未有的信息操纵风险。AI输出的"权威性"外衣使得偏见和误导性信息更容易被用户接受，从而对用户的认知和决策构成潜在威胁。
+                    </p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        本报告系统性地剖析了这一挑战，并提出了创新性的技术解决方案。核心论点是：通过将<strong>Agent Skill</strong>（方法层）与<strong>模型上下文协议（MCP）</strong>（能力层）相结合，可以构建一个强大的自动化系统，赋予用户识别和抵御GEO操纵的能力。
+                    </p>
+                    <div class="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
+                        <p class="text-blue-800 font-medium leading-relaxed">
+                            我们正处在一个关键的十字路口。是任由AI的输出在不知不觉中塑造我们的认知，还是主动装备自己，成为信息时代更加明智、更加自主的参与者？本报告提出的方案为我们指明了后者之路。通过技术赋能，我们有望构建一个更加透明、可信、以人为本的信息未来。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 参考文献 -->
+        <section id="references" class="px-12 py-8 bg-white">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="font-playfair text-3xl font-bold mb-8 text-gray-800">参考文献</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <div id="ref1" class="text-sm">
+                            <span class="font-medium">[1]</span> <cite><a href="https://mp.ofweek.com/auto/a056714276667" target="_blank" class="cite-link">当 AI 开始识别被优化过的内容：GEO 的优化思路正在被重新定义</a></cite>
+                        </div>
+                        <div id="ref12" class="text-sm">
+                            <span class="font-medium">[12]</span> <cite><a href="https://juejin.cn/post/7660773919464521743" target="_blank" class="cite-link">AI Agent 是什么？—— 一文理解 LLM、Memory、Skills、Tools、MCP、Workflow,Context</a></cite>
+                        </div>
+                        <div id="ref13" class="text-sm">
+                            <span class="font-medium">[13]</span> <cite><a href="https://blog.csdn.net/ytt0523_com/article/details/159921276" target="_blank" class="cite-link">MCP与Skill：AI Agent的连接与方法能力详解</a></cite>
+                        </div>
+                        <div id="ref17" class="text-sm">
+                            <span class="font-medium">[17]</span> <cite><a href="https://m.blog.csdn.net/lovechris00/article/details/158042190" target="_blank" class="cite-link">AI搜索中的GEO：生成式引擎优化详解</a></cite>
+                        </div>
+                        <div id="ref19" class="text-sm">
+                            <span class="font-medium">[19]</span> <cite><a href="https://developer.aliyun.com/article/1739184" target="_blank" class="cite-link">GEO 生成引擎优化详解</a></cite>
+                        </div>
+                        <div id="ref21" class="text-sm">
+                            <span class="font-medium">[21]</span> <cite><a href="https://baike.quark.cn/baike?id=50c177129e4d49889867dee9c1d21910" target="_blank" class="cite-link">Geo优化</a></cite>
+                        </div>
+                        <div id="ref34" class="text-sm">
+                            <span class="font-medium">[34]</span> <cite><a href="https://aiqicha.baidu.com/qifuknowledge/detail?id=10302195750" target="_blank" class="cite-link">平台如何托底信任？——重构AI内容生态的责任机制</a></cite>
+                        </div>
+                        <div id="ref61" class="text-sm">
+                            <span class="font-medium">[61]</span> <cite><a href="https://finance.sina.cn/2026-06-23/detail-iniekvas2050659.d.html" target="_blank" class="cite-link">"GEO优化"公司虚假宣传被查处！</a></cite>
+                        </div>
+                        <div id="ref64" class="text-sm">
+                            <span class="font-medium">[64]</span> <cite><a href="https://baijiahao.baidu.com/s?id=1860151265223576245" target="_blank" class="cite-link">当"伪GEO"披着SEO旧衣登场：一场针对AI时代的"数字骗局"</a></cite>
+                        </div>
+                        <div id="ref82" class="text-sm">
+                            <span class="font-medium">[82]</span> <cite><a href="https://tendcode.com/article/agent-skill-creation-standard/" target="_blank" class="cite-link">智能体 Skill 创建标准完全指南</a></cite>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div id="ref83" class="text-sm">
+                            <span class="font-medium">[83]</span> <cite><a href="https://cloud.tencent.com/developer/article/2689477" target="_blank" class="cite-link">按 Agent Skills Specification 写 Skill</a></cite>
+                        </div>
+                        <div id="ref84" class="text-sm">
+                            <span class="font-medium">[84]</span> <cite><a href="https://blog.csdn.net/qq_47574956/article/details/161571095" target="_blank" class="cite-link">AI Skill：AI技能</a></cite>
+                        </div>
+                        <div id="ref85" class="text-sm">
+                            <span class="font-medium">[85]</span> <cite><a href="https://vscode.js.cn/docs/agent-customization/agent-skills" target="_blank" class="cite-link">在 VS Code 中使用 Agent Skills</a></cite>
+                        </div>
+                        <div id="ref93" class="text-sm">
+                            <span class="font-medium">[93]</span> <cite><a href="https://m.blog.csdn.net/benbenqingqing1/article/details/83074115" target="_blank" class="cite-link">MCP协议从原理到实践</a></cite>
+                        </div>
+                        <div id="ref98" class="text-sm">
+                            <span class="font-medium">[98]</span> <cite><a href="https://www.freecodecamp.org/news/how-to-build-your-first-mcp-server-using-fastmcp/" target="_blank" class="cite-link">How to Build Your First MCP Server using FastMCP</a></cite>
+                        </div>
+                        <div id="ref105" class="text-sm">
+                            <span class="font-medium">[105]</span> <cite><a href="https://m.blog.csdn.net/weixin_46133588/article/details/138722504" target="_blank" class="cite-link">申请免费的必应搜索API</a></cite>
+                        </div>
+                        <div id="ref111" class="text-sm">
+                            <span class="font-medium">[111]</span> <cite><a href="https://github.com/yzfly/Awesome-MCP-ZH" target="_blank" class="cite-link">Awesome-MCP-ZH</a></cite>
+                        </div>
+                        <div id="ref148" class="text-sm">
+                            <span class="font-medium">[148]</span> <cite><a href="https://m.blog.csdn.net/weixin_32667955/article/details/163319656" target="_blank" class="cite-link">Python批量提取异构网页正文</a></cite>
+                        </div>
+                        <div id="ref170" class="text-sm">
+                            <span class="font-medium">[170]</span> <cite><a href="https://blog.csdn.net/2401_88352165/article/details/164305853" target="_blank" class="cite-link">30分钟搭建MCP Server</a></cite>
+                        </div>
+                        <div id="ref171" class="text-sm">
+                            <span class="font-medium">[171]</span> <cite><a href="https://blog.csdn.net/dahaihua333/article/details/164186675" target="_blank" class="cite-link">MCP 协议开发实战</a></cite>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 导航高亮和平滑滚动
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('section[id]');
+
+            // 点击导航链接
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    
+                    if (targetSection) {
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // 滚动时更新导航高亮
+            function updateActiveNav() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.pageYOffset >= sectionTop - 200) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav(); // 初始化
+        });
+    </script>
+</body>
+</html><div class="custowatermark" style="position: absolute; right: 10px; top: 10px; width: 66px; height: 26px; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 999;">
+    <img src="https://s3plus.meituan.net/aigc-media-resources/longcat/watermark.png" alt="" style="width: 100%; height: 100%; display: block; pointer-events: none;" />
+</div>
+<div style="display: block; color: #333; font-size: 14px; opacity: 1;">
+    (AI生成)
+</div>
