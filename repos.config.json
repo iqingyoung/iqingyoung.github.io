@@ -1,0 +1,38 @@
+{
+  "user": "iqingyoung",
+  "_comment": "pinned 决定展示顺序与置顶；curated 覆盖描述/标签（留空则用 GitHub 上的）；discover=true 时新仓库自动追加；exclude 为黑名单。",
+
+  "pinned": ["search2chart-mcp", "429-throttle-mcp", "inspidea"],
+
+  "discover": true,
+  "exclude": ["iqingyoung.github.io", "search2chart-cdn"],
+
+  "curated": {
+    "search2chart-mcp": {
+      "description": "Agent-native charting — turn search, research, and tabular data into inline charts in agent conversations. Native DSH plugin for true inline rendering + cross-agent MCP server with file-link and interactive mode.",
+      "topics": ["MCP", "Charting", "Agent-Native"]
+    },
+    "429-throttle-mcp": {
+      "description": "Rate-limited MCP proxy with agent operator skill — eliminate HTTP 429 errors on free LLM APIs. Automatic speed control, conversational parameter tuning, and long-task retrospectives built in.",
+      "topics": ["MCP", "Rate Limiting", "RPM / TPM", "v1.1"]
+    },
+    "inspidea": {
+      "displayName": "InspIdea · 灵感卡片",
+      "description": "Minimal cross-platform inspiration capture tool. One hotkey to summon, Enter to save. Pure Markdown local-first storage with Notion, Dropbox, and WebDAV sync. Built with Tauri 2 + React.",
+      "topics": ["Tauri 2", "React", "Rust", "Markdown", "Cross-Platform"]
+    }
+  },
+
+  "fallback": {
+    "_comment": "无 GH_PAT 时热力图与年贡献数用这份数据（来自原 index.html 的 activeWeeks）。",
+    "totalContributions": 51,
+    "activeWeeks": {
+      "40": [0, 0, 0, 0, 0, 0, 1],
+      "44": [0, 0, 0, 1, 1, 1, 0],
+      "45": [2, 3, 4, 3, 2, 1, 0],
+      "46": [3, 4, 2, 1, 1, 0, 0],
+      "48": [0, 1, 0, 0, 1, 0, 0],
+      "50": [0, 2, 0, 0, 0, 0, 0]
+    }
+  }
+}

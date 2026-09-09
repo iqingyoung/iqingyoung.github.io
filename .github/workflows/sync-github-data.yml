@@ -1,0 +1,40 @@
+name: Sync GitHub data
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'   # 每 6 小时同步一次
+  workflow_dispatch:          # 也支持手动点一下触发
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # ⚠️ 不能用 secrets.GITHUB_TOKEN！
+      # 它是 GitHub App 安装令牌（ghs_ 开头），作用域仅限本仓库、不代表你的用户身份，
+      # 查 contributionsCollection（贡献热力图）会拿到空数据。
+      # 必须在仓库里配置 secrets.GH_PAT = 你自己的 Personal Access Token (classic)。
+      - name: Build data.js
+        run: node scripts/build-data.mjs
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.js
+          if git diff --staged --quiet; then
+            echo "数据无变化，跳过提交"
+          else
+            git commit -m "chore: sync github data [skip ci]"
+            git push
+          fi
